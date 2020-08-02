@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Porygion Playground</title>
+  </head>
+  <body>
+    <!--
+  Add the following polyfill for Microsoft Edge 17/18 support:
+  <script src="https://cdn.jsdelivr.net/npm/text-encoding@0.7.0/lib/encoding.min.js"></script>
+  (see https://caniuse.com/#feat=textencoder)
+  -->
+    <script src="wasm_exec.js"></script>
+
+    <h1>Porygion Playground</h1>
+    <p>
+      Use the controls below to create procedurally-generated Pokémon
+      gen-3-styled region maps.
+    </p>
+    Number of Landmarks
+    <input type="number" id="num-cities-input" value="15" min="2" />
+    <br />
+    <button id="generate-full-button">
+      Generate New Region Map
+    </button>
+    <br />
+    <button id="generate-base-button">
+      Generate New Region Map Base
+    </button>
+    <br />
+    <button id="generate-cities-button">
+      Generate New Region Map Cities
+    </button>
+    <br />
+    <button id="generate-routes-button">
+      Generate New Region Map Routes
+    </button>
+    <p id="error-text"></p>
+    <image id="region-map-image-base" />
+    <image id="region-map-image-cities" />
+    <image id="region-map-image-full" />
+    <script>
+      let regionMap = {};
+      window.onload = function () {
+        if (!WebAssembly.instantiateStreaming) {
+          // polyfill
+          WebAssembly.instantiateStreaming = async (resp, importObject) => {
+            const source = await (await resp).arrayBuffer();
+            return await WebAssembly.instantiate(source, importObject);
+          };
+        }
+
+        const go = new Go();
+        let mod, inst;
+        WebAssembly.instantiateStreaming(fetch("main.wasm"), go.importObject)
+          .then((result) => {
+            mod = result.module;
+            inst = result.instance;
+            go.run(inst);
+          })
+          .catch((err) => {
+            console.error(err);
+          });
+      };
+
+      function displayImage(buf, id) {
+        let blob = new Blob([buf], { type: "image/png" });
+        document.getElementById(id).src = URL.createObjectURL(blob);
+      }
+    </script>
+  </body>
+</html>
